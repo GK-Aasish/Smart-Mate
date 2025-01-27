@@ -3,25 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Device Status</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>ESP32 Data Monitor</title>
+  <style>
+    .status {
+      font-size: 20px;
+      margin: 10px;
+    }
+    .red {
+      color: red;
+    }
+    .normal {
+      color: green;
+    }
+    .status-button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    .on {
+      background-color: green;
+      color: white;
+    }
+    .off {
+      background-color: gray;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Device Monitoring Dashboard</h1>
-    <div class="card">
-      <h2>Temperature</h2>
-      <div id="temperature" class="status">25°C</div>
-    </div>
-    <div class="card">
-      <h2>Humidity</h2>
-      <div id="humidity" class="status">40%</div>
-    </div>
-    <div class="card">
-      <h2>Motor Status</h2>
-      <button id="motor-status" class="status-button off">OFF</button>
-    </div>
+  <h1>ESP32 Data Monitor</h1>
+  <div>
+    <p id="temperature" class="status">Loading temperature...</p>
+    <p id="humidity" class="status">Loading humidity...</p>
+    <button id="motor-status" class="status-button">Loading motor status...</button>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    const tempElement = document.getElementById("temperature");
+    const humidityElement = document.getElementById("humidity");
+    const motorButton = document.getElementById("motor-status");
+
+    async function fetchData() {
+      try {
+        // Replace this URL with your ESP32's or server's endpoint
+        const response = await fetch("https://ishanlamo.netlify.app"); // Change to ESP32 URL if needed
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Update the UI with fetched data
+        const temperature = data.temperature;
+        const humidity = data.humidity;
+        const motorStatus = data.motorStatus ? "ON" : "OFF";
+
+        // Update temperature
+        if (temperature > 28) {
+          tempElement.className = "status red";
+          tempElement.textContent = `${temperature}°C (Heat Alert)`;
+        } else {
+          tempElement.className = "status normal";
+          tempElement.textContent = `${temperature}°C (Normal)`;
+        }
+
+        // Update humidity
+        humidityElement.textContent = `${humidity}%`;
+
+        // Update motor status
+        if (motorStatus === "ON") {
+          motorButton.className = "status-button on";
+          motorButton.textContent = "ON";
+        } else {
+          motorButton.className = "status-button off";
+          motorButton.textContent = "OFF";
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        tempElement.textContent = "Failed to load temperature.";
+        humidityElement.textContent = "Failed to load humidity.";
+        motorButton.textContent = "Failed to load motor status.";
+      }
+    }
+
+    // Fetch data every 5 seconds
+    setInterval(fetchData, 5000);
+
+    // Initial fetch
+    fetchData();
+  </script>
 </body>
 </html>
